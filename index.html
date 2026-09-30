@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPMBC Pro Generator - RPL BK Berbasis Cinta</title>
+    <!-- Tailwind CSS with Typography & Forms plugins -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography,forms"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- html2pdf for client-side PDF rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+        
+        .font-document {
+            font-family: 'Times New Roman', 'Tinos', serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Document Paper Simulation A4 */
+        .paper-sheet {
+            background: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            min-height: 297mm;
+            width: 210mm;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 20mm 20mm;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        [contenteditable="true"] {
+            outline: 2px dashed #0d9488;
+            background-color: #f0fdfa;
+            cursor: text;
+        }
+
+        [contenteditable="true"]:focus {
+            outline: 2px solid #0f766e;
+            background-color: #ecfdf5;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            #main-container {
+                overflow: visible !important;
+                display: block !important;
+                height: auto !important;
+            }
+            #preview-wrapper {
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+            .paper-sheet {
+                box-shadow: none !important;
+                width: 100% !important;
+                padding: 12mm 15mm !important;
+                margin: 0 !important;
+            }
+            .page-break {
+                page-break-before: always !important;
+                break-before: page !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col h-screen overflow-hidden">
+
+    <!-- Header Atas -->
+    <header class="bg-gradient-to-r from-teal-800 via-teal-700 to-emerald-800 text-white shadow-md z-20 flex-shrink-0 no-print border-b border-teal-900">
+        <div class="px-4 lg:px-6 py-2.5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md text-pink-300 border border-white/20 shadow-inner">
+                    <i class="fa-solid fa-heart-pulse text-2xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-sm md:text-base font-bold tracking-wide uppercase">RPMBC Pro Generator</h1>
+                        <span class="bg-pink-500/25 text-pink-200 border border-pink-400/40 text-[10px] px-2 py-0.5 rounded-full font-semibold">Versi 4.2</span>
+                    </div>
+                    <p class="text-[11px] text-teal-100 flex items-center gap-2">
+                        <span>RPL Bimbingan Konseling Berbasis Cinta</span>
+                        <span class="hidden sm:inline text-teal-300">• Kurikulum Merdeka</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- Dropdown Preset Demo -->
+                <div class="relative inline-block text-left" id="preset-dropdown-container">
+                    <button type="button" id="btn-preset-toggle" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition shadow-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 
+                        <span class="hidden sm:inline">Pilih Contoh Topik</span>
+                        <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <div id="preset-menu" class="hidden absolute right-0 mt-2 w-72 rounded-xl bg-white shadow-2xl ring-1 ring-black/10 z-50 py-1 text-slate-700 text-xs">
+                        <div class="px-3 py-2 font-semibold text-gray-500 border-b bg-gray-50 flex items-center justify-between">
+                            <span>Katalog Contoh RPL BK:</span>
+                            <span class="text-[10px] text-teal-700 font-normal">Klik untuk muat</span>
+                        </div>
+                        <button type="button" data-preset="pergaulan" class="preset-item w-full text-left px-3 py-2.5 hover:bg-teal-50 flex items-center gap-2 border-b border-slate-100">
+                            <i class="fa-solid fa-shield-cat text-teal-600 text-base"></i>
+                            <div>
+                                <p class="font-semibold text-slate-800">Bahaya Pergaulan Bebas</p>
+                                <p class="text-[10px] text-slate-500">Bidang Sosial • Fase E (Kelas X)</p>
+                            </div>
+                        </button>
+                        <button type="button" data-preset="prioritas" class="preset-item w-full text-left px-3 py-2.5 hover:bg-teal-50 flex items-center gap-2 border-b border-slate-100">
+                            <i class="fa-solid fa-clock text-amber-600 text-base"></i>
+                            <div>
+                                <p class="font-semibold text-slate-800">Skala Prioritas & Waktu</p>
+                                <p class="text-[10px] text-slate-500">Bidang Belajar • Fase F (Kelas XI)</p>
+                            </div>
+                        </button>
+                        <button type="button" data-preset="bullying" class="preset-item w-full text-left px-3 py-2.5 hover:bg-teal-50 flex items-center gap-2">
+                            <i class="fa-solid fa-handshake-angle text-rose-600 text-base"></i>
+                            <div>
+                                <p class="font-semibold text-slate-800">Stop Bullying & Empati</p>
+                                <p class="text-[10px] text-slate-500">Bidang Pribadi • Fase D (Kelas VIII)</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- API Key Config Button -->
+                <button type="button" id="btn-set-key" class="bg-teal-900/80 hover:bg-teal-950 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition border border-teal-600/40 flex items-center gap-1.5">
+                    <i class="fa-solid fa-key text-amber-300"></i>
+                    <span class="hidden sm:inline">Setelan AI</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Section -->
+    <main id="main-container" class="flex-grow flex flex-col lg:flex-row overflow-hidden relative">
+        
+        <!-- Kolom Kiri: Form Input -->
+        <aside class="w-full lg:w-[460px] xl:w-[500px] flex-shrink-0 bg-white border-r border-slate-200 shadow-lg overflow-y-auto h-full flex flex-col no-print">
+            <div class="p-4 lg:p-5 flex-grow space-y-5">
+                
+                <!-- Status Banner API -->
+                <div id="api-status-banner" class="rounded-xl p-3 bg-teal-50 border border-teal-200 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                        <span id="api-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <span id="api-status-text" class="text-teal-900 font-medium">Mode: <strong>Template Cerdas (Offline)</strong></span>
+                    </div>
+                    <button type="button" id="btn-banner-key" class="text-teal-700 hover:text-teal-900 underline font-semibold text-[11px]">Pengaturan</button>
+                </div>
+
+                <form id="rpmbc-form" class="space-y-4">
+                    
+                    <!-- Kategori Instansi & Kop Surat -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                                <i class="fa-solid fa-building-columns text-teal-600"></i> Kop Surat Resmi
+                            </label>
+                            <span class="text-[10px] text-slate-500">Pilih format dinas</span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="flex items-center justify-center gap-1.5 p-2 bg-white rounded-lg border text-xs cursor-pointer hover:border-teal-500 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50/70 shadow-sm">
+                                <input type="radio" name="kop_type" value="kemenag" checked class="text-teal-600 focus:ring-teal-500">
+                                <span class="font-medium text-[11px]">Kemenag</span>
+                            </label>
+                            <label class="flex items-center justify-center gap-1.5 p-2 bg-white rounded-lg border text-xs cursor-pointer hover:border-teal-500 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50/70 shadow-sm">
+                                <input type="radio" name="kop_type" value="kemendikbud" class="text-teal-600 focus:ring-teal-500">
+                                <span class="font-medium text-[11px]">Kemendikdasmen</span>
+                            </label>
+                            <label class="flex items-center justify-center gap-1.5 p-2 bg-white rounded-lg border text-xs cursor-pointer hover:border-teal-500 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50/70 shadow-sm">
+                                <input type="radio" name="kop_type" value="custom" class="text-teal-600 focus:ring-teal-500">
+                                <span class="font-medium text-[11px]">Kustom</span>
+                            </label>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Instansi Induk / Cabang Dinas</label>
+                                <input type="text" id="instansi_atas" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-teal-500" value="KANTOR KEMENTERIAN AGAMA KABUPATEN TRENGGALEK">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Nama Satuan Pendidikan *</label>
+                                <input type="text" id="sekolah" required class="w-full text-xs rounded-lg border-slate-300 font-semibold focus:ring-1 focus:ring-teal-500" value="MAN 1 TRENGGALEK">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Alamat & Kontak Satuan Pendidikan</label>
+                                <input type="text" id="alamat_sekolah" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-teal-500" value="Jl. Soekarno-Hatta Gang Apel No. 12 Kelutan | Telp. (0355) 791660">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Identitas Kepala & Guru BK -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2 shadow-sm">
+                            <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                                <i class="fa-solid fa-user-tie text-teal-600"></i> Kepala Sekolah / Madrasah
+                            </span>
+                            <input type="text" id="kepala_madrasah" required class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500" placeholder="Nama Kepala" value="H. Ahmad Fauzi, S.Ag., M.Pd.">
+                            <input type="text" id="nip_kepala" class="w-full text-[11px] rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500" placeholder="NIP / NPK..." value="NIP. 197505102001121002">
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2 shadow-sm">
+                            <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                                <i class="fa-solid fa-chalkboard-user text-teal-600"></i> Guru BK Penyusun
+                            </span>
+                            <input type="text" id="guru" required class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500" placeholder="Nama Guru" value="Khamim Thohari, S.Pd.">
+                            <input type="text" id="nip_guru" class="w-full text-[11px] rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500" placeholder="NIP / NPK..." value="NIP. 198804152014031003">
+                        </div>
+                    </div>
+
+                    <!-- Parameter Kelas & Semester -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tahun Ajaran</label>
+                            <input type="text" id="tahun_pelajaran" class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500" value="2026/2027">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Fase BK</label>
+                            <select id="fase" class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500 bg-white">
+                                <option value="A">Fase A (SD 1-2)</option>
+                                <option value="B">Fase B (SD 3-4)</option>
+                                <option value="C">Fase C (SD 5-6)</option>
+                                <option value="D">Fase D (SMP 7-9)</option>
+                                <option value="E" selected>Fase E (SMA 10)</option>
+                                <option value="F">Fase F (SMA 11-12)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Kelas</label>
+                            <input type="text" id="kelas" class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500" value="X (Sepuluh)">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Semester</label>
+                            <select id="semester" class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500 bg-white">
+                                <option value="Ganjil">Ganjil</option>
+                                <option value="Genap" selected>Genap</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Kota Penetapan</label>
+                            <input type="text" id="kota_tmt" class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500" value="Trenggalek">
+                        </div>
+                    </div>
+
+                    <!-- Materi dan Layanan -->
+                    <div class="space-y-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Bidang Layanan *</label>
+                                <select id="mapel" class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500 bg-white">
+                                    <option value="Pribadi">Pribadi</option>
+                                    <option value="Sosial" selected>Sosial</option>
+                                    <option value="Belajar">Belajar</option>
+                                    <option value="Karier">Karier</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Komponen Layanan</label>
+                                <select id="komponen_layanan" class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500 bg-white">
+                                    <option value="Layanan Dasar" selected>Layanan Dasar</option>
+                                    <option value="Layanan Responsif">Layanan Responsif</option>
+                                    <option value="Peminatan & Perencanaan Individual">Peminatan & Perencanaan</option>
+                                    <option value="Dukungan Sistem">Dukungan Sistem</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Topik / Tema Layanan *</label>
+                            <input type="text" id="materi" required class="w-full text-xs rounded-md border-slate-300 focus:ring-1 focus:ring-teal-500 font-medium" value="Bahaya Pergaulan Bebas di Kalangan Remaja" placeholder="Misal: Manajemen Emosi / Budaya Anti Bullying">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Pertemuan Ke-</label>
+                                <input type="number" id="pertemuan" min="1" max="12" value="1" class="w-full text-xs rounded-md border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Alokasi Waktu (Menit)</label>
+                                <input type="number" id="alokasi_waktu" min="20" step="5" value="45" class="w-full text-xs rounded-md border-slate-300">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Model & Pendekatan BK</label>
+                            <select id="model_pembelajaran" class="w-full text-xs rounded-md border-slate-300 bg-white">
+                                <option value="Experiential Learning">Experiential Learning (Refleksi Pengalaman Nyata)</option>
+                                <option value="Problem-Based Learning (PBL)">Problem-Based Learning (PBL Berbasis Kasus)</option>
+                                <option value="Project-Based Learning (PjBL)">Project-Based Learning (PjBL Karya Karakter)</option>
+                                <option value="Discovery Learning">Discovery Learning (Penemuan Mandiri)</option>
+                                <option value="Contextual Teaching & Learning">Contextual Teaching & Learning</option>
+                                <option value="Social-Emotional Learning (SEL)">Social-Emotional Learning (SEL)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dimensi Profil Lulusan / Pelajar -->
+                    <div class="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200">
+                        <label class="block text-xs font-bold text-emerald-950 mb-2 flex items-center justify-between">
+                            <span><i class="fa-solid fa-graduation-cap text-emerald-700"></i> Dimensi Profil Pelajar</span>
+                            <span class="text-[10px] text-emerald-700 font-normal">Pilih minimal 1</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-emerald-900">
+                                <input type="checkbox" name="profil" value="Keimanan & Ketakwaan Tuhan YME" class="rounded text-teal-600 focus:ring-teal-500" checked>
+                                <span>Keimanan & Takwa</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-emerald-900">
+                                <input type="checkbox" name="profil" value="Penalaran Kritis" class="rounded text-teal-600 focus:ring-teal-500" checked>
+                                <span>Penalaran Kritis</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-emerald-900">
+                                <input type="checkbox" name="profil" value="Kreativitas" class="rounded text-teal-600 focus:ring-teal-500" checked>
+                                <span>Kreativitas</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-emerald-900">
+                                <input type="checkbox" name="profil" value="Kemandirian" class="rounded text-teal-600 focus:ring-teal-500" checked>
+                                <span>Kemandirian</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-emerald-900">
+                                <input type="checkbox" name="profil" value="Kebinekaan Global" class="rounded text-teal-600 focus:ring-teal-500">
+                                <span>Kebinekaan Global</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-emerald-900">
+                                <input type="checkbox" name="profil" value="Kolaborasi / Gotong Royong" class="rounded text-teal-600 focus:ring-teal-500">
+                                <span>Gotong Royong</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Dimensi Cinta (Kurikulum Kasih RPMBC) -->
+                    <div class="bg-rose-50/70 p-3.5 rounded-xl border border-rose-200">
+                        <label class="block text-xs font-bold text-rose-950 mb-2 flex items-center justify-between">
+                            <span><i class="fa-solid fa-heart text-rose-600"></i> Dimensi Cinta (Pilar Kasih Guru)</span>
+                            <span class="text-[10px] text-rose-700 font-normal">Karakter Kasih</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-rose-950">
+                                <input type="checkbox" name="cinta" value="Cinta Allah & Rosul-Nya" class="rounded text-rose-600 focus:ring-rose-500" checked>
+                                <span>Cinta Allah & Rosul</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-rose-950">
+                                <input type="checkbox" name="cinta" value="Cinta Ilmu Pengetahuan" class="rounded text-rose-600 focus:ring-rose-500" checked>
+                                <span>Cinta Ilmu</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-rose-950">
+                                <input type="checkbox" name="cinta" value="Cinta Diri & Sesama" class="rounded text-rose-600 focus:ring-rose-500" checked>
+                                <span>Cinta Diri & Sesama</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-rose-950">
+                                <input type="checkbox" name="cinta" value="Cinta Lingkungan & Semesta" class="rounded text-rose-600 focus:ring-rose-500">
+                                <span>Cinta Lingkungan</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-rose-950 col-span-2">
+                                <input type="checkbox" name="cinta" value="Cinta Tanah Air & Bangsa" class="rounded text-rose-600 focus:ring-rose-500">
+                                <span>Cinta Tanah Air & Bangsa</span>
+                            </label>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Sticky Generate Button di bawah form -->
+            <div class="p-4 border-t bg-white sticky bottom-0 z-10 no-print space-y-2 shadow-inner">
+                <button type="submit" form="rpmbc-form" id="btn-generate" class="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex justify-center items-center gap-2.5 active:scale-[0.99]">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 
+                    <span>SUSUN DOKUMEN RPMBC</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Kolom Kanan: Preview & Editing Viewport -->
+        <section class="flex-grow bg-slate-200/90 p-3 sm:p-5 lg:p-6 h-full overflow-hidden flex flex-col" id="preview-wrapper">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-300/80 h-full flex flex-col overflow-hidden relative">
+                
+                <!-- Action Toolbar Preview -->
+                <div class="bg-slate-50 border-b border-slate-200 px-4 py-2.5 flex flex-wrap justify-between items-center gap-2 shrink-0 no-print">
+                    <div class="flex items-center gap-3">
+                        <div class="flex gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-rose-400 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <span>Pratinjau Lembar RPL A4</span>
+                            <span id="edit-badge" class="hidden px-2 py-0.5 text-[10px] bg-amber-100 text-amber-800 rounded-full font-bold">Mode Edit Aktif</span>
+                        </span>
+                    </div>
+
+                    <!-- Right Action Buttons -->
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <!-- Toggle Live Edit Mode -->
+                        <button type="button" id="btn-toggle-edit" class="hidden px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 transition items-center gap-1.5">
+                            <i class="fa-solid fa-pen-to-square text-teal-600"></i>
+                            <span>Edit Langsung</span>
+                        </button>
+
+                        <!-- Copy Content -->
+                        <button type="button" id="btn-copy" class="hidden px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 transition items-center gap-1.5" title="Salin Seluruh Dokumen">
+                            <i class="fa-solid fa-copy text-indigo-600"></i>
+                            <span>Salin</span>
+                        </button>
+
+                        <!-- Print Direct -->
+                        <button type="button" id="btn-print" class="hidden px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 transition items-center gap-1.5" title="Cetak Format A4">
+                            <i class="fa-solid fa-print text-slate-700"></i>
+                            <span>Cetak</span>
+                        </button>
+
+                        <!-- Word Export -->
+                        <button type="button" id="btn-word" class="hidden bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition items-center gap-1.5">
+                            <i class="fa-solid fa-file-word"></i> 
+                            <span>Word</span>
+                        </button>
+
+                        <!-- PDF Export -->
+                        <button type="button" id="btn-pdf" class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition items-center gap-1.5">
+                            <i class="fa-solid fa-file-pdf"></i> 
+                            <span>PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Document Container -->
+                <div id="preview-scroll-area" class="flex-grow overflow-y-auto p-4 md:p-8 relative bg-slate-200/60 flex justify-center">
+                    
+                    <!-- Empty State -->
+                    <div id="empty-state" class="m-auto text-center flex flex-col items-center justify-center py-16 px-4 max-w-md">
+                        <div class="w-16 h-16 bg-teal-100 text-teal-700 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-sm ring-8 ring-teal-50">
+                            <i class="fa-solid fa-book-open-reader"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-800 mb-1">RPL BK Berbasis Cinta Siap Disusun</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed text-center mb-5">
+                            Silakan pilih materi di menu atas atau isi formulir di samping kiri, lalu klik <strong class="text-teal-800">SUSUN DOKUMEN RPMBC</strong> untuk menghasilkan berkas resmi siap cetak.
+                        </p>
+                        <button type="button" id="btn-quick-start" class="text-xs bg-white border border-teal-600 text-teal-700 hover:bg-teal-50 font-semibold px-4 py-2 rounded-xl transition shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-amber-500"></i> Muat Data Contoh Sekarang
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="loading-state" class="hidden m-auto text-center flex flex-col items-center justify-center absolute inset-0 bg-white/95 z-20 backdrop-blur-sm p-6">
+                        <div class="relative mb-4">
+                            <div class="w-14 h-14 rounded-full border-4 border-teal-200 border-t-teal-700 animate-spin"></div>
+                            <div class="absolute inset-0 flex items-center justify-center text-rose-500 text-sm">
+                                <i class="fa-solid fa-heart animate-pulse"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-800 mb-1">Menyusun Rencana Pelaksanaan Layanan...</h4>
+                        <p id="loading-step-text" class="text-xs text-slate-500 max-w-xs text-center">Menyelaraskan kurikulum dengan nilai cinta guru dan pilar karakter.</p>
+                    </div>
+
+                    <!-- Document Paper Sheet Result -->
+                    <div id="result-paper" class="hidden paper-sheet font-document text-black"></div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Custom Modal Pesan Pengganti Alert -->
+    <div id="message-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 transition-opacity opacity-0 p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl transform scale-95 transition-transform duration-200 border border-slate-100">
+            <div class="flex items-center gap-3 mb-3">
+                <div id="modal-icon" class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-circle-info"></i>
+                </div>
+                <h3 id="modal-title" class="text-base font-bold text-slate-900">Pemberitahuan</h3>
+            </div>
+            <p id="modal-message" class="text-xs text-slate-600 mb-6 leading-relaxed">Isi pesan konfirmasi...</p>
+            <div class="flex justify-end">
+                <button type="button" id="btn-close-modal" class="bg-teal-700 text-white px-5 py-2 rounded-xl text-xs font-semibold hover:bg-teal-800 transition active:scale-95">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfigurasi API Key & Model -->
+    <div id="apikey-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-key text-teal-600"></i> Pengaturan Gemini AI
+                </h3>
+                <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">Opsional</span>
+            </div>
+            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                Jika memiliki Google Gemini API Key, Anda dapat memasukkannya di bawah ini untuk menghasilkan materi orisinal yang disesuaikan secara dinamis. Bila dikosongkan, sistem tetap berjalan menggunakan <strong>Engine Template Cerdas BK Terpadu</strong>.
+            </p>
+            <div class="space-y-3 mb-5">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini API Key</label>
+                    <input type="password" id="input-api-key" placeholder="AIzaSy..." class="w-full text-xs border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-mono">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Pilihan Model Gemini</label>
+                    <select id="select-model" class="w-full text-xs border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-teal-500 bg-white">
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (Sangat Cepat & Efisien)</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Generasi Terbaru)</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Analisis Mendalam)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" id="btn-cancel-key" class="px-4 py-2 border rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition">Batal</button>
+                <button type="button" id="btn-save-key" class="bg-teal-700 hover:bg-teal-800 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-sm transition">Simpan Setelan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('rpmbc-form');
+            const emptyState = document.getElementById('empty-state');
+            const loadingState = document.getElementById('loading-state');
+            const loadingStepText = document.getElementById('loading-step-text');
+            const resultPaper = document.getElementById('result-paper');
+            const modal = document.getElementById('message-modal');
+            const btnCloseModal = document.getElementById('btn-close-modal');
+            
+            // Buttons
+            const btnWord = document.getElementById('btn-word');
+            const btnPdf = document.getElementById('btn-pdf');
+            const btnPrint = document.getElementById('btn-print');
+            const btnCopy = document.getElementById('btn-copy');
+            const btnToggleEdit = document.getElementById('btn-toggle-edit');
+            const editBadge = document.getElementById('edit-badge');
+            
+            // Key modal elements
+            const apiKeyModal = document.getElementById('apikey-modal');
+            const btnSetKey = document.getElementById('btn-set-key');
+            const btnBannerKey = document.getElementById('btn-banner-key');
+            const btnSaveKey = document.getElementById('btn-save-key');
+            const btnCancelKey = document.getElementById('btn-cancel-key');
+            const inputApiKey = document.getElementById('input-api-key');
+            const selectModel = document.getElementById('select-model');
+            const apiStatusBanner = document.getElementById('api-status-banner');
+            const apiStatusText = document.getElementById('api-status-text');
+            const apiStatusDot = document.getElementById('api-status-dot');
+
+            // Preset elements
+            const btnPresetToggle = document.getElementById('btn-preset-toggle');
+            const presetMenu = document.getElementById('preset-menu');
+            const presetItems = document.querySelectorAll('.preset-item');
+            const btnQuickStart = document.getElementById('btn-quick-start');
+
+            let currentFormData = null;
+            let isEditMode = false;
+
+            const savedKey = localStorage.getItem('gemini_api_key') || '';
+            const savedModel = localStorage.getItem('gemini_selected_model') || 'gemini-1.5-flash';
+            if (savedKey) inputApiKey.value = savedKey;
+            if (savedModel) selectModel.value = savedModel;
+            updateApiStatusUI();
+
+            function updateApiStatusUI() {
+                const key = (localStorage.getItem('gemini_api_key') || '').trim();
+                const model = localStorage.getItem('gemini_selected_model') || 'gemini-1.5-flash';
+                if (key) {
+                    apiStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+                    apiStatusText.innerHTML = `Mode Online: <strong>${model}</strong>`;
+                } else {
+                    apiStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+                    apiStatusText.innerHTML = `Mode Offline: <strong>Mesin RPL Cerdas Terpadu</strong>`;
+                }
+            }
+
+            function showMessage(title, message, iconClass = 'fa-solid fa-circle-info', iconColor = 'text-teal-700 bg-teal-100') {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-message').textContent = message;
+                const iconBox = document.getElementById('modal-icon');
+                iconBox.className = `w-10 h-10 rounded-xl flex items-center justify-center text-lg ${iconColor}`;
+                iconBox.innerHTML = `<i class="${iconClass}"></i>`;
+                
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.querySelector('div').classList.remove('scale-95');
+                }, 10);
+            }
+
+            btnCloseModal.addEventListener('click', () => {
+                modal.classList.add('opacity-0');
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 200);
+            });
+
+            function openKeyModal() {
+                apiKeyModal.classList.remove('hidden');
+                apiKeyModal.classList.add('flex');
+            }
+            btnSetKey.addEventListener('click', openKeyModal);
+            btnBannerKey.addEventListener('click', openKeyModal);
+
+            btnCancelKey.addEventListener('click', () => {
+                apiKeyModal.classList.add('hidden');
+                apiKeyModal.classList.remove('flex');
+            });
+
+            btnSaveKey.addEventListener('click', () => {
+                const val = inputApiKey.value.trim();
+                const chosenModel = selectModel.value;
+                localStorage.setItem('gemini_selected_model', chosenModel);
+                if (val) {
+                    localStorage.setItem('gemini_api_key', val);
+                    showMessage('Kunci AI Tersimpan', `API Key berhasil disimpan. Model yang aktif: ${chosenModel}`, 'fa-solid fa-check', 'text-emerald-700 bg-emerald-100');
+                } else {
+                    localStorage.removeItem('gemini_api_key');
+                    showMessage('Mode Standar Aktif', 'Kunci dihapus. Aplikasi berjalan menggunakan generator cerdas bawaan tanpa API.', 'fa-solid fa-info', 'text-amber-700 bg-amber-100');
+                }
+                updateApiStatusUI();
+                apiKeyModal.classList.add('hidden');
+                apiKeyModal.classList.remove('flex');
+            });
+
+            const kopRadios = document.querySelectorAll('input[name="kop_type"]');
+            kopRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const type = e.target.value;
+                    const instansiInput = document.getElementById('instansi_atas');
+                    if (type === 'kemenag') {
+                        instansiInput.value = 'KANTOR KEMENTERIAN AGAMA KABUPATEN TRENGGALEK';
+                    } else if (type === 'kemendikbud') {
+                        instansiInput.value = 'DINAS PENDIDIKAN DAN KEBUDAYAAN PROVINSI JAWA TIMUR';
+                    } else {
+                        instansiInput.value = 'YAYASAN PENDIDIKAN NUSANTARA MAJU';
+                    }
+                });
+            });
+
+            const presets = {
+                pergaulan: {
+                    sekolah: 'MAN 1 TRENGGALEK',
+                    instansi: 'KANTOR KEMENTERIAN AGAMA KABUPATEN TRENGGALEK',
+                    alamat: 'Jl. Soekarno-Hatta Gang Apel No. 12 Kelutan | Telp. (0355) 791660',
+                    kepala: 'Drs. H. Ahmad Fauzi, M.Pd.',
+                    nipKepala: 'NIP. 197505102001121002',
+                    guru: 'Khamim Thohari, S.Pd.',
+                    nipGuru: 'NIP. 198804152014031003',
+                    tahun: '2026/2027',
+                    fase: 'E',
+                    kelas: 'X (Sepuluh)',
+                    semester: 'Genap',
+                    kota: 'Trenggalek',
+                    mapel: 'Sosial',
+                    komponen: 'Layanan Dasar',
+                    materi: 'Bahaya Pergaulan Bebas di Kalangan Remaja Modern',
+                    pertemuan: 1,
+                    waktu: 45,
+                    model: 'Experiential Learning',
+                    profil: ['Keimanan & Ketakwaan Tuhan YME', 'Penalaran Kritis', 'Kemandirian'],
+                    cinta: ['Cinta Allah & Rosul-Nya', 'Cinta Diri & Sesama']
+                },
+                prioritas: {
+                    sekolah: 'SMAN 2 TRENGGALEK',
+                    instansi: 'DINAS PENDIDIKAN DAN KEBUDAYAAN PROVINSI JAWA TIMUR',
+                    alamat: 'Jl. Raya Tulungagung Km. 3 Trenggalek | Telp. (0355) 791223',
+                    kepala: 'Dra. Hj. Sri Wahyuni, M.Pd.',
+                    nipKepala: 'NIP. 197103141997022001',
+                    guru: 'Khamim Thohari, S.Pd.',
+                    nipGuru: 'NIP. 198804152014031003',
+                    tahun: '2026/2027',
+                    fase: 'F',
+                    kelas: 'XI (Sebelas)',
+                    semester: 'Ganjil',
+                    kota: 'Trenggalek',
+                    mapel: 'Belajar',
+                    komponen: 'Layanan Dasar',
+                    materi: 'Manajemen Waktu & Matriks Skala Prioritas Belajar',
+                    pertemuan: 2,
+                    waktu: 45,
+                    model: 'Problem-Based Learning (PBL)',
+                    profil: ['Penalaran Kritis', 'Kemandirian', 'Kreativitas'],
+                    cinta: ['Cinta Ilmu Pengetahuan', 'Cinta Diri & Sesama']
+                },
+                bullying: {
+                    sekolah: 'MTsN 1 TRENGGALEK',
+                    instansi: 'KANTOR KEMENTERIAN AGAMA KABUPATEN TRENGGALEK',
+                    alamat: 'Jl. Ki Mangun Sarkoro No. 8 Trenggalek | Telp. (0355) 791440',
+                    kepala: 'Drs. H. Muhaimin, M.Ag.',
+                    nipKepala: 'NIP. 196908121995031002',
+                    guru: 'Khamim Thohari, S.Pd.',
+                    nipGuru: 'NIP. 198804152014031003',
+                    tahun: '2026/2027',
+                    fase: 'D',
+                    kelas: 'VIII (Delapan)',
+                    semester: 'Genap',
+                    kota: 'Trenggalek',
+                    mapel: 'Pribadi',
+                    komponen: 'Layanan Dasar',
+                    materi: 'Membangun Empati & Budaya Anti Perundungan (Stop Bullying)',
+                    pertemuan: 1,
+                    waktu: 40,
+                    model: 'Experiential Learning',
+                    profil: ['Keimanan & Ketakwaan Tuhan YME', 'Kebinekaan Global', 'Kolaborasi / Gotong Royong'],
+                    cinta: ['Cinta Diri & Sesama', 'Cinta Tanah Air & Bangsa']
+                }
+            };
+
+            function applyPreset(p) {
+                document.getElementById('sekolah').value = p.sekolah;
+                document.getElementById('instansi_atas').value = p.instansi;
+                document.getElementById('alamat_sekolah').value = p.alamat;
+                document.getElementById('kepala_madrasah').value = p.kepala;
+                document.getElementById('nip_kepala').value = p.nipKepala;
+                document.getElementById('guru').value = p.guru;
+                document.getElementById('nip_guru').value = p.nipGuru;
+                document.getElementById('tahun_pelajaran').value = p.tahun;
+                document.getElementById('fase').value = p.fase;
+                document.getElementById('kelas').value = p.kelas;
+                document.getElementById('semester').value = p.semester;
+                document.getElementById('kota_tmt').value = p.kota;
+                document.getElementById('mapel').value = p.mapel;
+                if (p.komponen) document.getElementById('komponen_layanan').value = p.komponen;
+                document.getElementById('materi').value = p.materi;
+                document.getElementById('pertemuan').value = p.pertemuan;
+                document.getElementById('alokasi_waktu').value = p.waktu;
+                document.getElementById('model_pembelajaran').value = p.model;
+
+                document.querySelectorAll('input[name="profil"]').forEach(cb => {
+                    cb.checked = p.profil.includes(cb.value);
+                });
+                document.querySelectorAll('input[name="cinta"]').forEach(cb => {
+                    cb.checked = p.cinta.includes(cb.value);
+                });
+            }
+
+            btnPresetToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                presetMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => presetMenu.classList.add('hidden'));
+
+            presetItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const key = item.getAttribute('data-preset');
+                    if (presets[key]) {
+                        applyPreset(presets[key]);
+                        showMessage('Data Contoh Dimuat', `Parameter untuk tema "${presets[key].materi}" siap disusun. Silakan klik tombol susun dokumen.`, 'fa-solid fa-check', 'text-teal-700 bg-teal-100');
+                    }
+                });
+            });
+
+            btnQuickStart.addEventListener('click', () => {
+                applyPreset(presets.pergaulan);
+                form.requestSubmit();
+            });
+
+            function buildTableHtml(d, ai) {
+                const listHtml = (arr) => {
+                    if (!arr || arr.length === 0) return "-";
+                    return arr.map((item, i) => `
+                        <div style="display:flex; margin-bottom:5px; text-align: justify;">
+                            <span style="width:20px; font-weight:bold; flex-shrink: 0;">${i+1}.</span>
+                            <span style="flex:1; line-height: 1.45;">${item}</span>
+                        </div>
+                    `).join('');
+                };
+
+                let materiHtml = ai.materiLayanan || '';
+                materiHtml = materiHtml.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+                materiHtml = materiHtml.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                let lkpdSoal = '';
+                if (ai.lkpd && ai.lkpd.soal && Array.isArray(ai.lkpd.soal)) {
+                    lkpdSoal = ai.lkpd.soal.map((s, i) => `
+                        <div style="margin-bottom: 16px;">
+                            <p style="margin: 0 0 5px 0; font-weight: bold;">${i+1}. ${s}</p>
+                            <div style="border-bottom: 1px dotted #666; height: 20px; margin-bottom: 5px;"></div>
+                            <div style="border-bottom: 1px dotted #666; height: 20px; margin-bottom: 5px;"></div>
+                            <div style="border-bottom: 1px dotted #666; height: 20px;"></div>
+                        </div>
+                    `).join('');
+                }
+
+                let pustakaHtml = '';
+                if (ai.daftarPustaka && Array.isArray(ai.daftarPustaka)) {
+                    pustakaHtml = ai.daftarPustaka.map(p => `<li style="margin-bottom: 5px; text-align: justify;">${p}</li>`).join('');
+                }
+
+                const today = new Date();
+                const options = { day: 'numeric', month: 'long', year: 'numeric' };
+                const formattedDate = today.toLocaleDateString('id-ID', options);
+
+                return `
+                <div id="export-root" class="font-document text-black text-[11pt] leading-normal">
+                    <!-- KOP SURAT RESMI -->
+                    <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 16px;">
+                        <h4 style="margin: 0 0 2px 0; font-size: 13pt; font-weight: normal; font-family: Arial, sans-serif; letter-spacing: 0.5px;">${d.kopKementerian}</h4>
+                        <h4 style="margin: 0 0 3px 0; font-size: 12pt; font-weight: bold; font-family: Arial, sans-serif;">${d.instansi}</h4>
+                        <h2 style="margin: 0 0 4px 0; font-size: 15pt; font-weight: bold; text-transform: uppercase; font-family: Arial, sans-serif;">${d.sekolah}</h2>
+                        <p style="margin: 0; font-size: 9.5pt; font-family: Arial, sans-serif;">${d.alamat}</p>
+                    </div>
+
+                    <!-- JUDUL DOKUMEN -->
+                    <div style="text-align: center; margin-bottom: 18px;">
+                        <h3 style="margin: 0 0 4px 0; font-size: 12pt; font-weight: bold; text-decoration: underline; text-transform: uppercase;">RENCANA PELAKSANAAN LAYANAN BIMBINGAN KONSELING</h3>
+                        <h4 style="margin: 0; font-size: 10.5pt; font-weight: bold; letter-spacing: 0.5px;">MODEL PEMBELAJARAN MENDALAM BERBASIS CINTA (RP-MBC) - T.A ${d.tahun}</h4>
+                    </div>
+
+                    <!-- TABEL IDENTITAS UMUM -->
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 10.5pt;">
+                        <tbody>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; width: 33%; font-weight: bold; background-color: #fafafa;">Komponen Layanan</td>
+                                <td style="border: 1px solid black; padding: 6px 10px;">${d.komponen || 'Layanan Dasar'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Bidang Bimbingan</td>
+                                <td style="border: 1px solid black; padding: 6px 10px; text-transform: uppercase; font-weight: 600;">${d.mapel}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Topik / Tema Layanan</td>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: 600;">${d.materi}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Aspek Perkembangan</td>
+                                <td style="border: 1px solid black; padding: 6px 10px;">${ai.aspekPerkembangan || 'Kematangan Hubungan Sosial & Landasan Perilaku Etis'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Dimensi Cinta (Karakter Kasih)</td>
+                                <td style="border: 1px solid black; padding: 6px 10px; color: #9f1239; font-weight: 600;">${d.dimensiCinta}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Dimensi Profil Pelajar</td>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: 600; color: #065f46;">${d.profilLulusan}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Materi Insersi Karakter Cinta</td>
+                                <td style="border: 1px solid black; padding: 6px 10px; text-align: justify; line-height: 1.45;">${ai.materiInsersi || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Capaian Layanan (CL)</td>
+                                <td style="border: 1px solid black; padding: 6px 10px; text-align: justify; line-height: 1.45;">${ai.capaianLayanan || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Internalisasi Tujuan Khusus</td>
+                                <td style="border: 1px solid black; padding: 6px 10px; text-align: justify; line-height: 1.45;">${ai.internalisasiTujuan || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Sasaran / Fase / Semester</td>
+                                <td style="border: 1px solid black; padding: 6px 10px;">Kelas ${d.kelas} (Fase ${d.fase}) - Semester ${d.semester}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Alokasi Waktu & Pertemuan</td>
+                                <td style="border: 1px solid black; padding: 6px 10px;">${d.pertemuan} Pertemuan x ${d.waktu} Menit</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Model & Pendekatan Layanan</td>
+                                <td style="border: 1px solid black; padding: 6px 10px;">${d.model}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 6px 10px; font-weight: bold; background-color: #fafafa;">Media, Alat & Perlengkapan</td>
+                                <td style="border: 1px solid black; padding: 6px 10px;">${ai.mediaAlat || 'LCD Proyektor, Video Edukasi, Lembar Refleksi Diri (LKPD), Papan Tulis'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- TAHAPAN KEGIATAN -->
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 10.5pt;">
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="border: 1px solid black; padding: 7px 10px; font-weight: bold; background-color: #e5e7eb; text-align: center; font-size: 11pt;">
+                                    LANGKAH-LANGKAH KEGIATAN LAYANAN
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 10px; width: 28%; font-weight: bold; vertical-align: top; background-color: #fafafa;">
+                                    1. Tahap Pendahuluan / Awal (10% Waktu)
+                                </td>
+                                <td style="border: 1px solid black; padding: 10px; vertical-align: top;">
+                                    ${listHtml(ai.tahapAwal)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 10px; font-weight: bold; vertical-align: top; background-color: #fafafa;">
+                                    2. Tahap Inti Pembelajaran (75% Waktu)
+                                </td>
+                                <td style="border: 1px solid black; padding: 10px; vertical-align: top;">
+                                    ${listHtml(ai.tahapInti)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 10px; font-weight: bold; vertical-align: top; background-color: #fafafa;">
+                                    3. Tahap Penutup & Refleksi (15% Waktu)
+                                </td>
+                                <td style="border: 1px solid black; padding: 10px; vertical-align: top;">
+                                    ${listHtml(ai.tahapPenutup)}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- EVALUASI -->
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 10.5pt;">
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="border: 1px solid black; padding: 7px 10px; font-weight: bold; background-color: #e5e7eb; text-align: center; font-size: 11pt;">
+                                    EVALUASI DAN TINDAK LANJUT
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 10px; width: 28%; font-weight: bold; vertical-align: top; background-color: #fafafa;">
+                                    Evaluasi Proses
+                                </td>
+                                <td style="border: 1px solid black; padding: 10px; vertical-align: top;">
+                                    ${listHtml(ai.evaluasiProses)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid black; padding: 10px; font-weight: bold; vertical-align: top; background-color: #fafafa;">
+                                    Evaluasi Hasil
+                                </td>
+                                <td style="border: 1px solid black; padding: 10px; vertical-align: top; text-align: justify; line-height: 1.45;">
+                                    ${ai.evaluasiHasil || 'Evaluasi hasil diukur melalui pemahaman baru peserta didik (understanding), kenyamanan perasaan dalam mengekspresikan diri (comfortable), dan komitmen tindakan preventif yang dituangkan dalam LKPD (action).'}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- TANDA TANGAN -->
+                    <table style="width: 100%; border: none; margin-bottom: 20px;">
+                        <tr>
+                            <td style="width: 50%; text-align: center; border: none; padding-bottom: 65px; vertical-align: top;">
+                                <p style="margin: 0 0 4px 0;">Mengetahui,</p>
+                                <p style="margin: 0; font-weight: bold;">Kepala ${d.sekolah}</p>
+                            </td>
+                            <td style="width: 50%; text-align: center; border: none; padding-bottom: 65px; vertical-align: top;">
+                                <p style="margin: 0 0 4px 0;">${d.kota}, ${formattedDate}</p>
+                                <p style="margin: 0; font-weight: bold;">Guru Bimbingan Konseling</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; border: none;">
+                                <p style="margin: 0; font-weight: bold; text-decoration: underline;">${d.kepala}</p>
+                                <p style="margin: 2px 0 0 0; font-size: 10pt;">${d.nipKepala || ''}</p>
+                            </td>
+                            <td style="text-align: center; border: none;">
+                                <p style="margin: 0; font-weight: bold; text-decoration: underline;">${d.guru}</p>
+                                <p style="margin: 2px 0 0 0; font-size: 10pt;">${d.nipGuru || ''}</p>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- LAMPIRAN PAGE BREAK -->
+                    <div class="page-break" style="page-break-before: always; height: 16px;"></div>
+
+                    <div style="text-align: center; margin-bottom: 22px; padding-top: 15px;">
+                        <h3 style="margin: 0; font-size: 13pt; font-weight: bold; text-decoration: underline;">LAMPIRAN - LAMPIRAN LAYANAN</h3>
+                        <p style="margin: 4px 0 0 0; font-size: 10.5pt; font-style: italic;">RPL BK Berbasis Cinta - ${d.materi}</p>
+                    </div>
+
+                    <!-- Lampiran 1: Materi Layanan -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="margin: 0 0 8px 0; background-color: #f3f4f6; padding: 6px 10px; border: 1px solid black; font-weight: bold; font-size: 11pt;">
+                            Lampiran 1: Materi Layanan Bimbingan Konseling
+                        </h4>
+                        <div style="border: 1px solid black; padding: 14px 16px; text-align: justify; line-height: 1.55;">
+                            <h4 style="margin-top: 0; text-align: center; margin-bottom: 14px; text-transform: uppercase; font-size: 12pt;">
+                                ${d.materi}
+                            </h4>
+                            ${materiHtml}
+                        </div>
+                    </div>
+
+                    <!-- Lampiran 2: LKPD -->
+                    <div style="margin-bottom: 25px; page-break-inside: avoid;">
+                        <h4 style="margin: 0 0 8px 0; background-color: #f3f4f6; padding: 6px 10px; border: 1px solid black; font-weight: bold; font-size: 11pt;">
+                            Lampiran 2: Lembar Kerja Peserta Didik (LKPD)
+                        </h4>
+                        <div style="border: 1px solid black; padding: 14px 16px;">
+                            <h4 style="text-align: center; margin-top: 0; margin-bottom: 6px; text-transform: uppercase; font-size: 11.5pt;">
+                                ${ai.lkpd ? ai.lkpd.judul : 'LEMBAR REFLEKSI DIRI PESERTA DIDIK'}
+                            </h4>
+                            <div style="display:flex; justify-content:space-between; font-size:10pt; margin-bottom:10px; border-bottom:1px solid #ccc; padding-bottom:6px;">
+                                <span>Nama Siswa: .................................................</span>
+                                <span>Kelas: ..........................</span>
+                            </div>
+                            <p style="margin-top: 0; font-size: 10.5pt;"><b>Petunjuk Pengerjaan:</b> ${ai.lkpd ? ai.lkpd.petunjuk : 'Bacalah setiap butir pertanyaan dengan tenang, lalu tuliskan pendapat serta komitmen hatimu dengan jujur.'}</p>
+                            <hr style="border: 0.5px solid black; margin-bottom: 16px;">
+                            ${lkpdSoal}
+                        </div>
+                    </div>
+
+                    <!-- Lampiran 3: Daftar Pustaka -->
+                    <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                        <h4 style="margin: 0 0 8px 0; background-color: #f3f4f6; padding: 6px 10px; border: 1px solid black; font-weight: bold; font-size: 11pt;">
+                            Lampiran 3: Sumber Rujukan & Daftar Pustaka
+                        </h4>
+                        <div style="border: 1px solid black; padding: 12px 16px;">
+                            <ul style="margin: 0; padding-left: 22px;">
+                                ${pustakaHtml}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }
+
+            function generateIntelligentFallback(d) {
+                const topic = d.materi;
+                return {
+                    komponen: d.komponen || "Layanan Dasar",
+                    aspekPerkembangan: "Landasan Perilaku Etis dan Kematangan Hubungan dengan Teman Sebaya",
+                    materiInsersi: `Menanamkan nilai keluhuran budi melalui ${d.dimensiCinta}. Peserta didik diajak menginternalisasi pentingnya menjaga martabat kemanusiaan dan cinta kasih terhadap sesama sebagai wujud rasa syukur kepada Tuhan Yang Maha Esa, sekaligus memperkuat ${d.profilLulusan}.`,
+                    capaianLayanan: `Peserta didik mampu mengidentifikasi esensi, risiko, dan strategi bijak terkait ${topic}, serta memiliki komitmen personal untuk menerapkan batasan moral dan cinta diri dalam kehidupan sehari-hari.`,
+                    internalisasiTujuan: `Membantu peserta didik mengonstruksi nalar kritis guna memilih tindakan yang bertanggung jawab dan selaras dengan prinsip kasih sayang serta perlindungan diri.`,
+                    mediaAlat: "LCD Proyektor, Lembar Refleksi Diri (LKPD), Tayangan Studi Kasus Interaktif, Papan Tulis & Lembar Observasi.",
+                    tahapAwal: [
+                        "Guru BK mengawali pertemuan dengan salam hangat, menanyakan kabar dengan penuh kasih sayang, dan memimpin doa bersama.",
+                        "Melakukan pembinaan suasana (ice breaking) yang berfokus pada keterbukaan hati dan saling menghargai.",
+                        "Menyampaikan topik, tujuan bimbingan, serta kesepakatan bersama mengenai asas kerahasiaan dan keterbukaan dalam berdiskusi."
+                    ],
+                    tahapInti: [
+                        `Guru BK memantik refleksi awal menggunakan studi kasus nyata seputar ${topic} yang dekat dengan dunia remaja saat ini.`,
+                        `Menggunakan pendekatan ${d.model}, siswa dibagi ke dalam kelompok kecil untuk mengeksplorasi akar permasalahan dan dampaknya terhadap masa depan.`,
+                        "Setiap perwakilan kelompok menyajikan pandangan solutif yang berlandaskan rasa empati, cinta diri, dan integritas pribadi.",
+                        "Guru memberikan klarifikasi, penguatan konsep, dan menyelaraskan pemikiran siswa dengan norma etika dan spiritualitas."
+                    ],
+                    tahapPenutup: [
+                        "Guru mengajak peserta didik menyimpulkan hikmah dan pesan inti dari layanan bimbingan hari ini.",
+                        "Peserta didik melakukan refleksi singkat mengenai apa yang dirasakan dan langkah nyata apa yang akan diambil ke depan.",
+                        "Guru BK memberikan apresiasi atas keterbukaan seluruh siswa dan menutup pertemuan dengan doa penenang hati."
+                    ],
+                    evaluasiProses: [
+                        "Mengamati antusiasme, keaktifan berpendapat, dan kehangatan interaksi antarsiswa selama dinamika kelompok berlangsung.",
+                        "Memperhatikan sikap saling menghormati ketika teman lain mengutarakan pendapat atau pengalaman pribadi."
+                    ],
+                    evaluasiHasil: "Dilakukan melalui penilaian pemahaman (Understanding), kenyamanan emosional (Comfortable), serta ketegasan komitmen tindak lanjut (Action Plan) yang dituangkan dalam lembar kerja siswa.",
+                    materiLayanan: `**1. Pengertian / Definisi**
+Secara mendasar, **${topic}** merupakan dinamika krusial dalam fase perkembangan kepribadian remaja. Pemahaman komprehensif mengenai batasan yang sehat sangat dibutuhkan agar peserta didik mampu membedakan relasi yang memberdayakan dari interaksi yang merugikan.
+
+**2. Jenis-jenis / Bentuk Manifestasi**
+Dapat bermanifestasi dalam ranah pertemanan langsung, pergaulan di jagat media sosial, komunikasi daring tanpa batas, hingga tekanan sebaya (*peer pressure*) yang menuntut konformitas negatif.
+
+**3. Ciri-ciri & Indikator Awal**
+Remaja yang mulai kehilangan kendali arah umumnya menunjukkan keengganan berdialog dengan orang tua, emosi yang mudah tersulut ketika dinasihati, penurunan motivasi belajar secara drastis, serta perubahan drastis dalam gaya hidup dan sirkel pertemanan.
+
+**4. Faktor Penyebab (Internal & Eksternal)**
+- *Faktor Internal:* Krisis identitas, rendahnya konsep penghargaan diri (*low self-esteem*), serta lemahnya regulasi diri dalam menahan impuls sesaat.
+- *Faktor Eksternal:* Kurangnya kehangatan komunikasi dalam keluarga, pengaruh lingkungan pergaulan yang tidak suportif, serta konsumsi konten digital tanpa filter etis.
+
+**5. Dampak & Konsekuensi Jangka Panjang**
+Berakibat pada terganggunya kesehatan mental (kecemasan berlebih, rasa bersalah mendalam), hilangnya kesempatan meraih cita-cita akademik, penyesalan seumur hidup, dan rusaknya relasi harmonis dengan keluarga.
+
+**6. Pihak yang Terlibat & Sistem Pendukung**
+Melibatkan peserta didik sebagai subjek utama, teman sebaya sebagai penguat atau pemantik, keluarga sebagai benteng utama rasa cinta, serta bimbingan konseling madrasah sebagai fasilitator pemulihan dan pertumbuhan.
+
+**7. Tindakan Preventif (Pencegahan Berbasis Kasih)**
+Menjaga pergaulan dengan landasan cinta kepada Tuhan, membiasakan diri bersikap asertif untuk berkata "TIDAK" pada ajakan menyimpang, serta menyalurkan energi muda ke wadah seni, olahraga, dan organisasi produktif.
+
+**8. Tindakan Kuratif (Solusi & Pemulihan)**
+Konseling individual secara suportif tanpa penghakiman (*unconditional positive regard*), pendampingan orang tua yang penuh empati, serta pembangunan kembali harga diri anak secara bertahap.
+
+**9. Ilustrasi Reflektif**
+Ibarat menanam pohon di tanah subur: jika dipagari dengan cinta dan nalar bijak, rantingnya akan tumbuh tinggi membuahkan prestasi; namun jika dibiarkan tanpa batas perlindungan, angin godaan akan mudah merobohkannya.`,
+                    lkpd: {
+                        judul: `LEMBAR KERJA SISWA: ${topic.toUpperCase()}`,
+                        petunjuk: "Renungkan perjalanan pribadimu dan jawablah pertanyaan di bawah ini dengan ketulusan hati:",
+                        soal: [
+                            `Setelah memahami materi tentang ${topic}, faktor risiko apa yang paling sering kamu amati di lingkungan sekitarmu?`,
+                            "Jika kamu melihat sahabat dekatmu berada dalam posisi rentan atau terbawa arus negatif, tindakan penuh kasih apa yang akan kamu lakukan untuk merangkulnya?",
+                            "Tuliskan 1 (satu) komitmen janji pribadimu sebagai wujud Cinta Diri dan Cinta Masa Depan untuk membentengi diri dari hal tersebut!"
+                        ]
+                    },
+                    daftarPustaka: [
+                        "Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi. (2024). Panduan Operasional Penyelenggaraan Bimbingan dan Konseling Kurikulum Merdeka. Jakarta: Kemendikbudristek.",
+                        "Corey, G. (2017). Theory and Practice of Counseling and Psychotherapy. Boston: Cengage Learning.",
+                        "Yusuf, S. (2020). Psikologi Perkembangan Anak dan Remaja. Bandung: PT Remaja Rosdakarya."
+                    ]
+                };
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const profilChecked = Array.from(document.querySelectorAll('input[name="profil"]:checked')).map(cb => cb.value);
+                const cintaChecked = Array.from(document.querySelectorAll('input[name="cinta"]:checked')).map(cb => cb.value);
+
+                if (profilChecked.length === 0) {
+                    showMessage('Perhatian', 'Silakan centang minimal satu Dimensi Profil Pelajar.', 'fa-solid fa-triangle-exclamation', 'text-amber-700 bg-amber-100');
+                    return;
+                }
+                if (cintaChecked.length === 0) {
+                    showMessage('Perhatian', 'Silakan centang minimal satu Dimensi Cinta.', 'fa-solid fa-triangle-exclamation', 'text-rose-700 bg-rose-100');
+                    return;
+                }
+
+                const kopRadio = document.querySelector('input[name="kop_type"]:checked');
+                let kopKemen = 'KEMENTERIAN AGAMA REPUBLIK INDONESIA';
+                if (kopRadio && kopRadio.value === 'kemendikbud') {
+                    kopKemen = 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH REPUBLIK INDONESIA';
+                } else if (kopRadio && kopRadio.value === 'custom') {
+                    kopKemen = 'PEMERINTAH REPUBLIK INDONESIA';
+                }
+
+                const data = {
+                    kopKementerian: kopKemen,
+                    instansi: document.getElementById('instansi_atas').value,
+                    sekolah: document.getElementById('sekolah').value,
+                    alamat: document.getElementById('alamat_sekolah').value,
+                    kepala: document.getElementById('kepala_madrasah').value,
+                    nipKepala: document.getElementById('nip_kepala').value,
+                    guru: document.getElementById('guru').value,
+                    nipGuru: document.getElementById('nip_guru').value,
+                    tahun: document.getElementById('tahun_pelajaran').value,
+                    fase: document.getElementById('fase').value,
+                    kelas: document.getElementById('kelas').value,
+                    semester: document.getElementById('semester').value,
+                    kota: document.getElementById('kota_tmt').value,
+                    mapel: document.getElementById('mapel').value,
+                    komponen: document.getElementById('komponen_layanan').value,
+                    materi: document.getElementById('materi').value,
+                    pertemuan: document.getElementById('pertemuan').value,
+                    waktu: document.getElementById('alokasi_waktu').value,
+                    model: document.getElementById('model_pembelajaran').value,
+                    profilLulusan: profilChecked.join(', '),
+                    dimensiCinta: cintaChecked.join(', ')
+                };
+
+                currentFormData = data;
+
+                // State UI updates
+                emptyState.classList.add('hidden');
+                resultPaper.classList.add('hidden');
+                loadingState.classList.remove('hidden');
+                loadingState.classList.add('flex');
+                loadingStepText.textContent = "Mengharmonisasikan kurikulum dengan nilai kasih...";
+
+                // Disable action buttons during processing
+                btnWord.classList.add('hidden');
+                btnPdf.classList.add('hidden');
+                btnPrint.classList.add('hidden');
+                btnCopy.classList.add('hidden');
+                btnToggleEdit.classList.add('hidden');
+
+                const apiKey = (localStorage.getItem('gemini_api_key') || '').trim();
+                const modelChoice = localStorage.getItem('gemini_selected_model') || 'gemini-1.5-flash';
+                let aiData = null;
+
+                if (!apiKey) {
+                    // Use intelligent offline engine
+                    await new Promise(r => setTimeout(r, 600));
+                    aiData = generateIntelligentFallback(data);
+                } else {
+                    // Call Google Gemini API
+                    loadingStepText.textContent = `Menghubungkan ke Gemini AI (${modelChoice})...`;
+                    const prompt = `Anda adalah Guru BK Penggerak berprestasi di Indonesia.
+Buatlah naskah Rencana Pelaksanaan Layanan (RPL) Berbasis Cinta (RPMBC) untuk topik/tema: "${data.materi}" pada bidang layanan "${data.mapel}".
+Tingkat / Fase: Fase ${data.fase} (Kelas ${data.kelas}).
+Pendekatan: ${data.model}.
+Dimensi Cinta yang diintegrasikan: ${data.dimensiCinta}.
+Dimensi Profil Pelajar: ${data.profilLulusan}.
+
+Keluarkan HANYA JSON MURNI (tanpa format markdown tambahan seperti \`\`\`json) dengan spesifikasi kunci persis seperti ini:
+{
+  "komponen": "${data.komponen}",
+  "aspekPerkembangan": "1 kalimat aspek perkembangan formal BK",
+  "materiInsersi": "1 paragraf mendalam tentang internalisasi karakter dan nilai cinta",
+  "capaianLayanan": "1 kalimat capaian layanan spesifik",
+  "internalisasiTujuan": "1 kalimat tujuan internalisasi",
+  "mediaAlat": "Daftar media dan instrumen yang digunakan",
+  "tahapAwal": ["Langkah 1", "Langkah 2", "Langkah 3"],
+  "tahapInti": ["Langkah inti 1 (${data.model})", "Langkah inti 2", "Langkah inti 3", "Langkah inti 4"],
+  "tahapPenutup": ["Langkah penutup 1", "Langkah penutup 2", "Langkah penutup 3"],
+  "evaluasiProses": ["Observasi proses 1", "Observasi proses 2"],
+  "evaluasiHasil": "1 paragraf evaluasi hasil",
+  "materiLayanan": "Uraian materi mendalam lengkap mencakup 9 poin berikut dengan format bold:\\n**1. Pengertian / Definisi**\\n**2. Jenis-jenis / Bentuk**\\n**3. Ciri-ciri & Indikator**\\n**4. Faktor Penyebab (Internal & Eksternal)**\\n**5. Dampak / Akibat**\\n**6. Pihak yang Terlibat**\\n**7. Tindakan Preventif**\\n**8. Tindakan Kuratif / Solutif**\\n**9. Contoh Kasus / Refleksi**",
+  "lkpd": {
+    "judul": "Judul LKPD yang menggugah emosi",
+    "petunjuk": "Petunjuk pengerjaan",
+    "soal": ["Pertanyaan reflektif 1", "Pertanyaan studi kasus 2", "Komitmen tindakan 3"]
+  },
+  "daftarPustaka": ["Rujukan 1 gaya APA", "Rujukan 2 gaya APA", "Rujukan 3 gaya APA"]
+}`;
+
+                    try {
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelChoice}:generateContent`;
+
+                        const payload = {
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { 
+                                responseMimeType: "application/json" 
+                            }
+                        };
+
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'x-goog-api-key': apiKey
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            const errText = await response.text();
+                            throw new Error(`Gemini API Error (${response.status}): ${errText}`);
+                        }
+
+                        const result = await response.json();
+                        if (result.candidates && result.candidates[0].content) {
+                            let raw = result.candidates[0].content.parts[0].text;
+                            raw = raw.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+                            aiData = JSON.parse(raw);
+                        } else {
+                            throw new Error("Respon AI tidak mengembalikan konten valid.");
+                        }
+                    } catch (err) {
+                        console.warn("Gagal menggunakan API, beralih ke engine cadangan cerdas:", err);
+                        aiData = generateIntelligentFallback(data);
+                        showMessage('Info Mode Cadangan', 'Koneksi ke Gemini AI mengalami kendala. Sistem otomatis menggunakan Engine Terpadu untuk menghasilkan dokumen lengkap berkualitas.', 'fa-solid fa-triangle-exclamation', 'text-amber-700 bg-amber-100');
+                    }
+                }
+
+                const generatedMarkup = buildTableHtml(data, aiData);
+                resultPaper.innerHTML = generatedMarkup;
+
+                loadingState.classList.add('hidden');
+                loadingState.classList.remove('flex');
+                resultPaper.classList.remove('hidden');
+
+                // Enable action buttons
+                btnWord.classList.remove('hidden');
+                btnWord.classList.add('inline-flex');
+                btnPdf.classList.remove('hidden');
+                btnPdf.classList.add('inline-flex');
+                btnPrint.classList.remove('hidden');
+                btnPrint.classList.add('inline-flex');
+                btnCopy.classList.remove('hidden');
+                btnCopy.classList.add('inline-flex');
+                btnToggleEdit.classList.remove('hidden');
+                btnToggleEdit.classList.add('inline-flex');
+
+                // Reset Edit Mode
+                isEditMode = false;
+                resultPaper.setAttribute('contenteditable', 'false');
+                editBadge.classList.add('hidden');
+                btnToggleEdit.classList.remove('bg-amber-100', 'border-amber-400');
+            });
+
+            // Toggle Direct Live Edit
+            btnToggleEdit.addEventListener('click', () => {
+                isEditMode = !isEditMode;
+                resultPaper.setAttribute('contenteditable', isEditMode ? 'true' : 'false');
+                if (isEditMode) {
+                    editBadge.classList.remove('hidden');
+                    btnToggleEdit.classList.add('bg-amber-100', 'border-amber-400');
+                    showMessage('Mode Edit Aktif', 'Anda sekarang dapat mengklik dan mengubah teks apapun langsung di lembar dokumen sebelum mencetak atau menyimpannya.', 'fa-solid fa-pen-to-square', 'text-amber-700 bg-amber-100');
+                } else {
+                    editBadge.classList.add('hidden');
+                    btnToggleEdit.classList.remove('bg-amber-100', 'border-amber-400');
+                }
+            });
+
+            // Copy to Clipboard (using execCommand for iframe safety)
+            btnCopy.addEventListener('click', () => {
+                const el = document.getElementById('export-root');
+                if (!el) return;
+                
+                const range = document.createRange();
+                range.selectNode(el);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                
+                try {
+                    document.execCommand('copy');
+                    window.getSelection().removeAllRanges();
+                    showMessage('Tersalin!', 'Dokumen RPL telah disalin ke clipboard komputer Anda dan siap ditempel.', 'fa-solid fa-clipboard-check', 'text-indigo-700 bg-indigo-100');
+                } catch (err) {
+                    showMessage('Gagal Salin', 'Silakan gunakan kombinasi Ctrl+A lalu Ctrl+C untuk menyalin isi lembar kerja.', 'fa-solid fa-circle-exclamation', 'text-rose-700 bg-rose-100');
+                }
+            });
+
+            // Direct Browser Print
+            btnPrint.addEventListener('click', () => {
+                window.print();
+            });
+
+            // Download Word (.doc)
+            btnWord.addEventListener('click', () => {
+                if (!currentFormData) return;
+                const exportEl = document.getElementById('export-root');
+                if (!exportEl) return;
+
+                let htmlContent = exportEl.innerHTML;
+                htmlContent = htmlContent.replace(/<div class="page-break"[^>]*><\/div>/g, '<br clear="all" style="mso-special-character:line-break;page-break-before:always" />');
+
+                const header = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="utf-8">
+                    <title>RPL BK - ${currentFormData.materi}</title>
+                    <style>
+                        body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.35; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 12pt; }
+                        td, th { border: 1px solid black; padding: 5pt; vertical-align: top; }
+                        p { margin-top: 0; margin-bottom: 4pt; }
+                        h2, h3, h4 { margin: 0; text-align: center; }
+                    </style>
+                </head>
+                <body>`;
+                const footer = `</body></html>`;
+                const fullDoc = header + htmlContent + footer;
+
+                const blob = new Blob(['\ufeff' + fullDoc], { type: 'application/msword;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                const safeName = currentFormData.materi.replace(/[^a-zA-Z0-9]/g, '_');
+                link.download = `RPMBC_${safeName}.doc`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Download PDF
+            btnPdf.addEventListener('click', () => {
+                if (!currentFormData) return;
+                const element = document.getElementById('export-root');
+                if (!element) return;
+
+                const safeName = currentFormData.materi.replace(/[^a-zA-Z0-9]/g, '_');
+                const opt = {
+                    margin:       [10, 12, 10, 12],
+                    filename:     `RPMBC_${safeName}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:    { mode: ['css', 'legacy'] }
+                };
+
+                html2pdf().set(opt).from(element).save();
+            });
+        });
+    </script>
+</body>
+</html>
